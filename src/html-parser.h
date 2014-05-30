@@ -10,6 +10,6 @@ typedef struct MMUHtmlParser {
 void MMUHtmlParserInit(MMUHtmlParser* parser, const MMUCallbacks* callbacks,
         const MMUOptions* options);
 void MMUHtmlParserDestroy(MMUHtmlParser* parser);
-void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html, size_t len);
+void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html);
     
 #endif

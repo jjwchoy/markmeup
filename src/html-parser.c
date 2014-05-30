@@ -1,5 +1,8 @@
 #include "html-parser.h"
 
+#include <libxml/HTMLparser.h>
+#include <libxml/tree.h>
+
 void MMUHtmlParserInit(MMUHtmlParser* parser, const MMUCallbacks* callbacks,
         const MMUOptions* options) {
     MMUBuilderInit(parser->builder, callbacks, options);
@@ -9,17 +12,158 @@ void MMUHtmlParserDestroy(MMUHtmlParser* parser) {
     MMUBuilderDestroy(parser->builder);
 }
 
-void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html, size_t len) {
-    // TODO
-    int rc;
-    htmlParserCtxtPtr htmlParserContext = htmlCreateMemoryParserCtxt(html, (int)len);
-    rc = htmlParseDocument(htmlParserContext);
+static void processNode(xmlNodePtr node, MMUBuilder* builder);
+
+static void processLink(xmlElementPtr linkNode, MMUBuilder* builder) {
+    xmlAttributePtr attr = linkNode->attributes;
+    while (attr) {
+        if (strcmp("href", (const char*)attr->name) == 0) {
+            if (attr->children && attr->children->type == XML_TEXT_NODE) {
+                MMUBuilderStartLink(builder, (const char*)attr->children->content);
+                return;
+            }
+        }
+        if (attr->next && attr->next->type == XML_ATTRIBUTE_NODE) {
+            attr = (xmlAttributePtr)attr->next;
+        } else {
+            attr = NULL;
+        }
+    }
+    MMUBuilderStartLink(builder, "");
 }
 
-void mmuParseHtml(const char* html, size_t len, const MMUCallbacks* callbacks,
+static void processElementStart(xmlElementPtr elementNode, MMUBuilder* builder) {
+    const char* tagName = (const char*)elementNode->name;
+    if (strcmp("a", tagName) == 0) {
+        processLink(elementNode, builder);
+    } else if (strcmp("b", tagName) == 0) {
+        MMUBuilderPushBold(builder);
+    } else if (strcmp("br", tagName) == 0) {
+        MMUBuilderAppendLineSeparator(builder);
+    } else if (strcmp("em", tagName) == 0) {
+        MMUBuilderPushItalic(builder);
+    } else if (strcmp("h1", tagName) == 0) {
+        MMUBuilderPushHeading(builder, 1);
+    } else if (strcmp("h2", tagName) == 0) {
+        MMUBuilderPushHeading(builder, 2);
+    } else if (strcmp("h3", tagName) == 0) {
+        MMUBuilderPushHeading(builder, 3);
+    } else if (strcmp("h4", tagName) == 0) {
+        MMUBuilderPushHeading(builder, 4);
+    } else if (strcmp("h5", tagName) == 0) {
+        MMUBuilderPushHeading(builder, 5);
+    } else if (strcmp("h6", tagName) == 0) {
+        MMUBuilderPushHeading(builder, 6);
+    } else if (strcmp("i", tagName) == 0) {
+        MMUBuilderPushItalic(builder);
+    } else if (strcmp("li", tagName) == 0) {
+        // TODO
+    } else if (strcmp("ol", tagName) == 0) {
+        // TODO
+    } else if (strcmp("p", tagName) == 0) {
+        MMUBuilderStartParagraph(builder);
+    } else if (strcmp("strong", tagName) == 0) {
+        MMUBuilderPushBold(builder);
+    } else if (strcmp("u", tagName) == 0) {
+        MMUBuilderPushUnderline(builder);
+    } else if (strcmp("ul", tagName) == 0) {
+        // TODO
+    }
+}
+
+static void processElementEnd(xmlElementPtr elementNode, MMUBuilder* builder) {
+    const char* tagName = (const char*)elementNode->name;
+    if (strcmp("a", tagName) == 0) {
+        MMUBuilderEndLink(builder);
+    } else if (strcmp("b", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("br", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("em", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("h1", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("h2", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("h3", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("h4", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("h5", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("h6", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("i", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("li", tagName) == 0) {
+        // TODO
+    } else if (strcmp("ol", tagName) == 0) {
+        // TODO
+    } else if (strcmp("p", tagName) == 0) {
+        MMUBuilderEndParagraph(builder);
+    } else if (strcmp("strong", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("u", tagName) == 0) {
+        MMUBuilderPop(builder);
+    } else if (strcmp("ul", tagName) == 0) {
+        // TODO
+    }
+}
+
+static void processElementNode(xmlElementPtr elementNode, MMUBuilder* builder) {
+    processElementStart(elementNode, builder);
+
+    if (elementNode->children) {
+        processNode(elementNode->children, builder);
+    }
+
+    processElementEnd(elementNode, builder);
+}
+
+
+
+static void processTextNode(xmlNodePtr textNode, MMUBuilder* builder) {
+    const char* content = (const char*)textNode->content;
+    MMUBuilderAppendText(builder, content, strlen(content));
+}
+
+void processNode(xmlNodePtr node, MMUBuilder* builder) {
+    switch (node->type) {
+        case XML_ELEMENT_NODE:
+            processElementNode((xmlElementPtr)node, builder);
+            break;
+        case XML_TEXT_NODE:
+            processTextNode(node, builder);
+            break;
+        default:
+            if (node->children) {
+                processNode(node->children, builder);
+            }
+            break;
+    }
+
+    if (node->next) {
+        processNode(node->next, builder);
+    }
+}
+
+void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html) {
+    // TODO
+    int rc;
+    htmlDocPtr doc;
+
+    doc = htmlReadDoc((const unsigned char*)html, NULL, "UTF-8", XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+
+    if (doc && doc->type == XML_HTML_DOCUMENT_NODE) {
+        processNode((xmlNodePtr)doc, parser->builder);
+        xmlFreeDoc(doc);
+    }
+}
+
+void mmuParseHtml(const char* html, const MMUCallbacks* callbacks,
         const MMUOptions* options) {
     MMUHtmlParser parser[1];
     MMUHtmlParserInit(parser, callbacks, options);
-    MMUHtmlParserParse(parser, html, len);
+    MMUHtmlParserParse(parser, html);
     MMUHtmlParserDestroy(parser);
 }

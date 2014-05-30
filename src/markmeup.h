@@ -26,7 +26,7 @@ typedef struct MMUOptions {
     const char* paragraphSeparator;
 } MMUOptions;
 
-void mmuParseHtml(const char* html, size_t len, const MMUCallbacks* callbacks,
+void mmuParseHtml(const char* html, const MMUCallbacks* callbacks,
         const MMUOptions* options);
 
 #endif

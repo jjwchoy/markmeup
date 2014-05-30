@@ -99,7 +99,7 @@ void MMUBuilderPushItalic(MMUBuilder* builder) {
     MMUContextStackPush(builder->contextStack)->textStyle |= MMU_TEXT_STYLE_ITALIC;
 }
 
-void MMUBuilderPushUnderlined(MMUBuilder* builder) {
+void MMUBuilderPushUnderline(MMUBuilder* builder) {
     if (!(MMUContextStackTop(builder->contextStack)->textStyle & MMU_TEXT_STYLE_UNDERLINED)) {
         MMUBuilderFlush(builder);
     }
@@ -124,11 +124,12 @@ void MMUBuilderPop(MMUBuilder* builder) {
 
 void MMUBuilderAppendText(MMUBuilder* builder, const char* text, size_t size) {
     size_t freeSpace = builder->bufferCapacity - builder->bufferLen;
-    while ((builder->bufferCapacity - builder->bufferLen) < size) {
+    while ((builder->bufferCapacity - builder->bufferLen) < (size + 1)) {
         builder->buffer = realloc(builder->buffer, builder->bufferCapacity * 2);
     }
 
     memcpy(builder->buffer + builder->bufferLen, text, size);
+    builder->bufferLen += size;
 }
 
 void MMUBuilderAppendLineSeparator(MMUBuilder* builder) {
@@ -184,7 +185,14 @@ size_t MMUBuilderCurrentOffset(MMUBuilder* builder) {
 }
 
 void MMUBuilderFlush(MMUBuilder* builder) {
+    if (builder->bufferLen == 0) {
+        return;
+    }
+
     const MMUContext* context = MMUContextStackTop(builder->contextStack);
+    // We always keep at least one spare slot in the buffer
+    // NULL terminate the string
+    builder->buffer[builder->bufferLen] = '\0';
     builder->callbacks->appendText(builder->buffer, builder->bufferLen, context);
     builder->flushedLen += builder->bufferLen;
     builder->bufferLen = 0;
