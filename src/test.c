@@ -29,5 +29,5 @@ int main() {
         "<BR>",
         "</P>"
     };
-    mmuParseHtml("<a href=\"hello\" data-abc=\"goodbye\"><b>hello</b> <i>world</i></a>", &callbacks, &options);
+    mmuParseHtml("<p>Paragraph 1 <a href=\"hello\" data-abc=\"goodbye\"><b>hello</b> <i>world</i></a></p><p>Paragraph 2<br>More content</p>", &callbacks, &options);
 }
