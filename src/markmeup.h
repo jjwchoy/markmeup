@@ -40,6 +40,8 @@ typedef struct MMUCallbacks {
     void (*appendText)(const char* text, size_t len, const MMUContext* textContext, void* callbackContext);
     void (*markLink)(const char* href, size_t start, size_t end, void* callbackContext);
     void (*markParagraph)(size_t start, size_t end, void* callbackContext);
+    void (*startListItem)(int depth, unsigned int index, void* callbackContext);
+    void (*endListItem)(void* callbackContext);
     void (*finish)(void* callbackContext);
 } MMUCallbacks;
 

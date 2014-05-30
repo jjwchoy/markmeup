@@ -36,6 +36,10 @@ typedef struct MMUContextStack {
     unsigned int level;
 } MMUContextStack;
 
+typedef struct MMUListState {
+    unsigned char index;
+} MMUListState;
+
 typedef struct MMUBuilder {
     MMUContextStack contextStack[1];
     const MMUCallbacks* callbacks;
@@ -50,6 +54,9 @@ typedef struct MMUBuilder {
 
     char inParagraph;
     size_t paragraphStart;
+
+    MMUListState listStack[MMUContextStackSize];
+    int listDepth;
 
     size_t flushedLen;
     void* callbackContext;
@@ -74,6 +81,12 @@ void MMUBuilderEndLink(MMUBuilder* builder);
 
 void MMUBuilderStartParagraph(MMUBuilder* builder);
 void MMUBuilderEndParagraph(MMUBuilder* builder);
+
+void MMUBuilderStartList(MMUBuilder* builder, int ordered);
+void MMUBuilderEndList(MMUBuilder* builder);
+
+void MMUBuilderStartListItem(MMUBuilder* builder);
+void MMUBuilderEndListItem(MMUBuilder* builder);
 
 void MMUBuilderFinish(MMUBuilder* builder);
 

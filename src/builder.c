@@ -98,6 +98,8 @@ void MMUBuilderInit(MMUBuilder* builder, const MMUCallbacks* callbacks,
     builder->inParagraph = 0;
     builder->paragraphStart = 0;
 
+    builder->listDepth = 0;
+
     builder->flushedLen = 0;
     builder->callbackContext = callbackContext;
 }
@@ -146,7 +148,6 @@ void MMUBuilderPop(MMUBuilder* builder) {
 }
 
 void MMUBuilderAppendText(MMUBuilder* builder, const char* text, size_t size) {
-    size_t freeSpace = builder->bufferCapacity - builder->bufferLen;
     while ((builder->bufferCapacity - builder->bufferLen) < (size + 1)) {
         builder->buffer = realloc(builder->buffer, builder->bufferCapacity * 2);
     }
@@ -192,6 +193,30 @@ void MMUBuilderEndParagraph(MMUBuilder* builder) {
     builder->paragraphStart = 0;
 }
 
+void MMUBuilderStartList(MMUBuilder* builder, int ordered) {
+    MMUBuilderStartBlock(builder);
+    ++builder->listDepth;
+    MMUListState* listState = builder->listStack + builder->listDepth - 1;
+    listState->index = ordered ? 1 : 0;
+}
+
+void MMUBuilderEndList(MMUBuilder* builder) {
+    assert(builder->listDepth);
+    --builder->listDepth;
+}
+
+void MMUBuilderStartListItem(MMUBuilder* builder) {
+    assert(builder->listDepth);
+    MMUBuilderFlush(builder);
+    MMUListState* listState = builder->listStack + builder->listDepth - 1;
+    builder->callbacks->startListItem(builder->listDepth, listState->index, builder->callbackContext);
+}
+
+void MMUBuilderEndListItem(MMUBuilder* builder) {
+    assert(builder->listDepth);
+    builder->callbacks->endListItem(builder->callbackContext);
+}
+
 void MMUBuilderFinish(MMUBuilder* builder) {
     MMUBuilderFlush(builder);
     builder->callbacks->finish(builder->callbackContext);
@@ -200,6 +225,8 @@ void MMUBuilderFinish(MMUBuilder* builder) {
 void MMUBuilderStartBlock(MMUBuilder* builder) {
     if (builder->inParagraph) {
         MMUBuilderEndParagraph(builder);
+    } else if (MMUBuilderCurrentOffset(builder) > 0) {
+        MMUBuilderAppendText(builder, builder->options->paragraphSeparator, strlen(builder->options->paragraphSeparator));
     }
 }
 
