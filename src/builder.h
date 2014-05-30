@@ -48,12 +48,8 @@ typedef struct MMUBuilder {
     char* buffer;
     size_t bufferLen;
     size_t bufferCapacity;
-
-    const char* currentHref;
-    size_t linkStart;
-
+    
     char inParagraph;
-    size_t paragraphStart;
 
     MMUListState listStack[MMUContextStackSize];
     int listDepth;

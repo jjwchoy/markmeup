@@ -92,11 +92,7 @@ void MMUBuilderInit(MMUBuilder* builder, const MMUCallbacks* callbacks,
     builder->bufferLen = 0;
     builder->bufferCapacity = INITIAL_BUFFER_SIZE;
 
-    builder->currentHref = NULL;
-    builder->linkStart = 0;
-
     builder->inParagraph = 0;
-    builder->paragraphStart = 0;
 
     builder->listDepth = 0;
 
@@ -162,35 +158,27 @@ void MMUBuilderAppendLineSeparator(MMUBuilder* builder) {
 }
 
 void MMUBuilderStartLink(MMUBuilder* builder, const char* href) {
-    assert(builder->currentHref == NULL);
-    builder->currentHref = href;
-    builder->linkStart = MMUBuilderCurrentOffset(builder);
+    MMUBuilderFlush(builder);
+    builder->callbacks->startLink(href, builder->callbackContext);
 }
 
 void MMUBuilderEndLink(MMUBuilder* builder) {
     MMUBuilderFlush(builder);
 
-    builder->callbacks->markLink(builder->currentHref, builder->linkStart, builder->flushedLen, builder->callbackContext);
-    builder->currentHref = NULL;
-    builder->linkStart = 0;
+    builder->callbacks->endLink(builder->callbackContext);
 }
 
 void MMUBuilderStartParagraph(MMUBuilder* builder) {
     MMUBuilderStartBlock(builder);
 
     builder->inParagraph = 1;
-    builder->paragraphStart = MMUBuilderCurrentOffset(builder);
 }
 
 void MMUBuilderEndParagraph(MMUBuilder* builder) {
-    const char* paragraphSeparator = builder->options->paragraphSeparator;
-    MMUBuilderAppendText(builder, paragraphSeparator, strlen(paragraphSeparator));
-
-    builder->callbacks->markParagraph(builder->paragraphStart,
-            MMUBuilderCurrentOffset(builder), builder->callbackContext);
+//    const char* paragraphSeparator = builder->options->paragraphSeparator;
+//    MMUBuilderAppendText(builder, paragraphSeparator, strlen(paragraphSeparator));
 
     builder->inParagraph = 0;
-    builder->paragraphStart = 0;
 }
 
 void MMUBuilderStartList(MMUBuilder* builder, int ordered) {
