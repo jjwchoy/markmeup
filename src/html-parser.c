@@ -100,7 +100,7 @@ static void processElementEnd(xmlElementPtr elementNode, MMUBuilder* builder) {
     } else if (strcmp("b", tagName) == 0) {
         MMUBuilderPop(builder);
     } else if (strcmp("br", tagName) == 0) {
-        MMUBuilderPop(builder);
+        // Do nothing
     } else if (strcmp("em", tagName) == 0) {
         MMUBuilderPop(builder);
     } else if (strcmp("h1", tagName) == 0) {
