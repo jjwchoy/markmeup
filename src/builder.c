@@ -81,7 +81,7 @@ int MMUContextStackCurrentEqualsPrev(MMUContextStack* stack) {
 }
 
 void MMUBuilderInit(MMUBuilder* builder, const MMUCallbacks* callbacks,
-        const MMUOptions* options) {
+        const MMUOptions* options, void* callbackContext) {
     static const size_t INITIAL_BUFFER_SIZE = 4096;
 
     MMUContextStackInit(builder->contextStack);
@@ -99,6 +99,7 @@ void MMUBuilderInit(MMUBuilder* builder, const MMUCallbacks* callbacks,
     builder->paragraphStart = 0;
 
     builder->flushedLen = 0;
+    builder->callbackContext = callbackContext;
 }
 
 void MMUBuilderDestroy(MMUBuilder* builder) {
@@ -168,7 +169,7 @@ void MMUBuilderStartLink(MMUBuilder* builder, const char* href) {
 void MMUBuilderEndLink(MMUBuilder* builder) {
     MMUBuilderFlush(builder);
 
-    builder->callbacks->markLink(builder->currentHref, builder->linkStart, builder->flushedLen);
+    builder->callbacks->markLink(builder->currentHref, builder->linkStart, builder->flushedLen, builder->callbackContext);
     builder->currentHref = NULL;
     builder->linkStart = 0;
 }
@@ -185,7 +186,7 @@ void MMUBuilderEndParagraph(MMUBuilder* builder) {
     MMUBuilderAppendText(builder, paragraphSeparator, strlen(paragraphSeparator));
 
     builder->callbacks->markParagraph(builder->paragraphStart,
-            MMUBuilderCurrentOffset(builder));
+            MMUBuilderCurrentOffset(builder), builder->callbackContext);
 
     builder->inParagraph = 0;
     builder->paragraphStart = 0;
@@ -193,7 +194,7 @@ void MMUBuilderEndParagraph(MMUBuilder* builder) {
 
 void MMUBuilderFinish(MMUBuilder* builder) {
     MMUBuilderFlush(builder);
-    builder->callbacks->finish();
+    builder->callbacks->finish(builder->callbackContext);
 }
 
 void MMUBuilderStartBlock(MMUBuilder* builder) {
@@ -215,7 +216,7 @@ void MMUBuilderFlush(MMUBuilder* builder) {
     // We always keep at least one spare slot in the buffer
     // NULL terminate the string
     builder->buffer[builder->bufferLen] = '\0';
-    builder->callbacks->appendText(builder->buffer, builder->bufferLen, context);
+    builder->callbacks->appendText(builder->buffer, builder->bufferLen, context, builder->callbackContext);
     builder->flushedLen += builder->bufferLen;
     builder->bufferLen = 0;
 }

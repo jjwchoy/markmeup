@@ -37,10 +37,10 @@ typedef struct MMUContext {
 } MMUContext;
 
 typedef struct MMUCallbacks {
-    void (*appendText)(const char* text, size_t len, const MMUContext* context);
-    void (*markLink)(const char* href, size_t start, size_t end);
-    void (*markParagraph)(size_t start, size_t end);
-    void (*finish)();
+    void (*appendText)(const char* text, size_t len, const MMUContext* textContext, void* callbackContext);
+    void (*markLink)(const char* href, size_t start, size_t end, void* callbackContext);
+    void (*markParagraph)(size_t start, size_t end, void* callbackContext);
+    void (*finish)(void* callbackContext);
 } MMUCallbacks;
 
 typedef struct MMUOptions {
@@ -49,6 +49,6 @@ typedef struct MMUOptions {
 } MMUOptions;
 
 void mmuParseHtml(const char* html, const MMUCallbacks* callbacks,
-        const MMUOptions* options);
+        const MMUOptions* options, void* callbackContext);
 
 #endif

@@ -26,8 +26,8 @@
 #include <libxml/tree.h>
 
 void MMUHtmlParserInit(MMUHtmlParser* parser, const MMUCallbacks* callbacks,
-        const MMUOptions* options) {
-    MMUBuilderInit(parser->builder, callbacks, options);
+        const MMUOptions* options, void* callbackContext) {
+    MMUBuilderInit(parser->builder, callbacks, options, callbackContext);
 }
 
 void MMUHtmlParserDestroy(MMUHtmlParser* parser) {
@@ -183,9 +183,9 @@ void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html) {
 }
 
 void mmuParseHtml(const char* html, const MMUCallbacks* callbacks,
-        const MMUOptions* options) {
+        const MMUOptions* options, void* callbackContext) {
     MMUHtmlParser parser[1];
-    MMUHtmlParserInit(parser, callbacks, options);
+    MMUHtmlParserInit(parser, callbacks, options, callbackContext);
     MMUHtmlParserParse(parser, html);
     MMUHtmlParserDestroy(parser);
 }

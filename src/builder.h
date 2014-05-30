@@ -52,10 +52,11 @@ typedef struct MMUBuilder {
     size_t paragraphStart;
 
     size_t flushedLen;
+    void* callbackContext;
 } MMUBuilder;
 
 void MMUBuilderInit(MMUBuilder* builder, const MMUCallbacks* callbacks,
-        const MMUOptions* options);
+        const MMUOptions* options, void* callbackContext);
 void MMUBuilderDestroy(MMUBuilder* builder);
 
 void MMUBuilderPushBold(MMUBuilder* builder);

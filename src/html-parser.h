@@ -30,7 +30,7 @@ typedef struct MMUHtmlParser {
 } MMUHtmlParser;
 
 void MMUHtmlParserInit(MMUHtmlParser* parser, const MMUCallbacks* callbacks,
-        const MMUOptions* options);
+        const MMUOptions* options, void* callbackContext);
 void MMUHtmlParserDestroy(MMUHtmlParser* parser);
 void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html);
     
