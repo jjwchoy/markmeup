@@ -180,6 +180,8 @@ void MMUHtmlParserParse(MMUHtmlParser* parser, const char* html) {
         processNode((xmlNodePtr)doc, parser->builder);
         xmlFreeDoc(doc);
     }
+
+    MMUBuilderFinish(parser->builder);
 }
 
 void mmuParseHtml(const char* html, const MMUCallbacks* callbacks,
